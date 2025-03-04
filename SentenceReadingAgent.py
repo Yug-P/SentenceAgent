@@ -49,6 +49,8 @@ class SentenceReadingAgent:
             "force", "blue", "object", "decide", "surface", "deep", "moon", "island", "foot", "yet", "busy", "test",
             "record", "boat", "common", "gold", "possible", "plane", "age", "dry", "wonder", "laugh", "thousand", "ago"
         }
+        self.colors = {"red", "blue", "white", "black"}
+        self.time_words = {"morning", "night", "afternoon", "evening", "midnight", "noon"}
 
         pass
 
@@ -83,27 +85,28 @@ class SentenceReadingAgent:
         sentence_words = self.preprocess_sentence(sentence)
         question_words = self.preprocess_sentence(question)
 
-        # Identify question type
         question_type = question_words[0].lower()
 
         if question_type == "who":
-            if "was" in question_words and "told" in question_words:
-                return sentence_words[sentence_words.index("friend")] if "friend" in sentence_words else ""
+            if "is" in question_words and "in" in question_words:
+                for i, word in enumerate(sentence_words):
+                    if word.isdigit() or word in {"hundred", "thousand", "children", "adults", "people"}:
+                        return " ".join(sentence_words[i:i + 2])
             for word in sentence_words:
                 if word.capitalize() in self.names and word not in question_words:
                     return word.capitalize()
 
         elif question_type == "what":
             if "color" in question_words:
-                for word in sentence_words:
-                    if word in {"red", "blue", "white", "black"}:  # Extend color list if needed
-                        return word
+                for i, word in enumerate(sentence_words):
+                    if word in self.colors and i > 0:
+                        return f"{word} {sentence_words[i - 1]}"
             if "is" in question_words and len(question_words) > 2:
                 idx = sentence_words.index(question_words[-1]) if question_words[-1] in sentence_words else -1
                 return sentence_words[idx + 1] if idx != -1 and idx + 1 < len(sentence_words) else ""
             for i, word in enumerate(sentence_words):
                 if word not in self.common_words and word.capitalize() not in self.names:
-                    return " ".join(sentence_words[i:i + 3])  # Extract meaningful phrase
+                    return " ".join(sentence_words[i:i + 3])
 
         elif question_type == "where":
             for i, word in enumerate(sentence_words):
@@ -112,7 +115,7 @@ class SentenceReadingAgent:
 
         elif question_type == "when":
             for word in sentence_words:
-                if re.match(r"\d{1,2}:\d{2}(am|pm)?", word):
+                if re.match(r"\d{1,2}:\d{2}(am|pm)?", word) or word in self.time_words:
                     return word
 
         elif question_type == "how":
@@ -123,10 +126,10 @@ class SentenceReadingAgent:
             if "many" in question_words:
                 for i, word in enumerate(sentence_words):
                     if word.isdigit() or word in {"hundred", "thousand"}:
-                        return " ".join(sentence_words[i:i + 2])
+                        return " ".join(sentence_words[i-1 :i])
             if "big" in question_words or "size" in question_words:
                 for i, word in enumerate(sentence_words):
-                    if word in {"small", "large", "big"}:  # Extend size-related words
+                    if word in {"small", "large", "big"}:
                         return word
             if "do" in question_words:
                 for i, word in enumerate(sentence_words):
@@ -134,5 +137,4 @@ class SentenceReadingAgent:
                         return word
 
         return ""
-
 pass
